@@ -1,0 +1,53 @@
+name: Test Chatbot API
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Syntax check
+        run: python -m py_compile chatbot_server.py && echo "Syntax OK"
+
+      - name: Start chatbot server
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          uvicorn chatbot_server:app --host 0.0.0.0 --port 8000 &
+          echo "Waiting for server to be ready..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/health && break
+            sleep 1
+          done
+
+      - name: Run API test suite
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python run_local_tests.py
+
+      - name: Smoke test - health endpoint
+        run: |
+          curl -sf http://localhost:8000/health | python -m json.tool
+
+      - name: Smoke test - basic chat
+        run: |
+          curl -sf -X POST http://localhost:8000/chat \
+            -H "Content-Type: application/json" \
+            -d '{"message": "Hello, can you help me?"}' | python -m json.tool

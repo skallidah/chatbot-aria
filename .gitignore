@@ -1,0 +1,41 @@
+# Environment & secrets
+.env
+.env.*
+
+# TestMu tunnel binary (downloaded at runtime)
+LT
+LT.exe
+
+# Archived / backup files
+files.zip
+*.v1
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+.env/
+
+# Tunnel logs
+lt.log
+nohup.out
+run_tunnel.sh
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
