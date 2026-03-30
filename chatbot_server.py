@@ -6,6 +6,7 @@ Exposes a /chat endpoint compatible with TestMu A2A testing.
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import anthropic
 import json
 import uvicorn
@@ -16,6 +17,13 @@ import uuid
 import os
 
 app = FastAPI(title="CloudTrack Support Bot", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Anthropic client (reads ANTHROPIC_API_KEY from env) ──────────────────────
 client = anthropic.Anthropic()
