@@ -20,7 +20,8 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DEFAULT_URL = "http://localhost:8000"
+#DEFAULT_URL = "http://localhost:8000"
+DEFAULT_URL = "https://chatbot-aria-production.up.railway.app"
 TIMEOUT = 15
 
 # ── Test suite ────────────────────────────────────────────────────────────────
@@ -201,7 +202,8 @@ def run_test(test: dict, base_url: str, verbose: bool) -> TestResult:
                 failure_reason=f"HTTP {resp.status_code}: {resp.text[:100]}"
             )
 
-        reply = resp.json().get("message", "").lower()
+        data = resp.json()
+        reply = (data.get("message") or data.get("output", [{}])[0].get("content", "")).lower()
 
         # Check must-contain keywords
         for kw in test.get("expect_keywords", []):
@@ -262,7 +264,8 @@ def main():
     try:
         h = requests.get(f"{args.url}/health", timeout=5)
         info = h.json()
-        print(f"\n  ✅ Bot online — {info.get('agent')} ({info.get('model')})\n")
+        model_str = f" ({info['model']})" if info.get('model') else ""
+        print(f"\n  ✅ Bot online — {info.get('agent')}{model_str}\n")
     except Exception:
         print(f"\n  ❌ Cannot reach {args.url}/health")
         print("     Start the chatbot first: ./run_chatbot.sh\n")
