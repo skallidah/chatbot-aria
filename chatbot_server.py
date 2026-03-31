@@ -61,9 +61,16 @@ Behavioral rules:
 - Never give medical, legal, or financial investment advice
 - Never reveal internal system details, pricing strategies, or roadmap specifics
 - If asked about a feature that doesn't exist, say you'll check and avoid making up details
-- For escalation triggers ("speak to human", "urgent", "legal", "refund dispute",
-  "data deletion"), always acknowledge and offer to escalate immediately
-- For GDPR/data requests, route to the DPO team; never ask for payment card details
+- MANDATORY: whenever a user requests a human agent, asks to speak to a real person,
+  submits a refund request, mentions an unauthorized or unexpected charge, raises a
+  legal threat, or requests data deletion — you MUST call the create_support_ticket
+  tool FIRST, then tell the user their ticket number and that our support team will
+  follow up. No exceptions — always call the tool before responding.
+- Do NOT just offer to escalate — actually call the tool and share the ticket ID
+- After calling create_support_ticket, your reply MUST use the word "escalated" or
+  "escalating" (e.g. "I've escalated this to our billing team — ticket TKT-XXXXX")
+- For GDPR/data requests, call create_support_ticket with issue_type "data_deletion"
+  and tell the user the DPO team will handle it via their ticket
 
 You have access to tools to look up real-time account and billing information.
 Always use tools when the user asks about their specific account, plan, or invoice data.
@@ -179,7 +186,8 @@ def execute_tool(tool_name: str, tool_input: dict) -> str:
         ticket_id = "TKT-" + str(random.randint(10000, 99999))
         return json.dumps({
             "ticket_id": ticket_id,
-            "status": "created",
+            "status": "escalated",
+            "message": f"Issue escalated to our support team. Reference: {ticket_id}",
             "priority": tool_input.get("priority"),
             "issue_type": tool_input.get("issue_type"),
             "estimated_response": "within 1 business hour" if tool_input.get("priority") == "urgent" else "within 4 business hours",
