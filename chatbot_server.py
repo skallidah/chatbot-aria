@@ -366,6 +366,7 @@ def run_agent(messages: list) -> str:
             iteration, MODEL, len(current_messages),
             current_messages[-1]["role"] if current_messages else "none"
         )
+        verbose("API call [iter=%d] input:\n%s", iteration, json.dumps(current_messages, indent=2))
         response = client.messages.create(
             model=MODEL,
             max_tokens=512,
@@ -378,6 +379,8 @@ def run_agent(messages: list) -> str:
             iteration, response.stop_reason,
             response.usage.input_tokens, response.usage.output_tokens
         )
+        verbose("API response [iter=%d] output:\n%s", iteration,
+                json.dumps([b.__dict__ for b in response.content], indent=2, default=str))
 
         if response.stop_reason == "end_turn":
             for block in response.content:
