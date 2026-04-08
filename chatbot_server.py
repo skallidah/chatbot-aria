@@ -24,6 +24,16 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger("aria")
+logger.setLevel(logging.INFO)
+
+# Set LOG_VERBOSE=true in Railway (or any env) to enable detailed API call logging.
+VERBOSE = os.environ.get("LOG_VERBOSE", "false").lower() == "true"
+
+def verbose(msg: str, *args):
+    if VERBOSE:
+        logger.info("[VERBOSE] " + msg, *args)
+
+logger.info("Verbose logging: %s", "ON" if VERBOSE else "OFF")
 
 app = FastAPI(
     title="CloudTrack Support Bot",
@@ -351,12 +361,22 @@ def run_agent(messages: list) -> str:
     current_messages = messages.copy()
 
     for iteration in range(5):
+        verbose(
+            "API call [iter=%d] model=%s messages=%d last_role=%s",
+            iteration, MODEL, len(current_messages),
+            current_messages[-1]["role"] if current_messages else "none"
+        )
         response = client.messages.create(
             model=MODEL,
             max_tokens=512,
             system=SYSTEM_PROMPT,
             tools=TOOLS,
             messages=current_messages
+        )
+        verbose(
+            "API response [iter=%d] stop_reason=%s input_tokens=%d output_tokens=%d",
+            iteration, response.stop_reason,
+            response.usage.input_tokens, response.usage.output_tokens
         )
 
         if response.stop_reason == "end_turn":
@@ -453,6 +473,8 @@ async def chat(request: Request):
     messages = [m for m in messages if m.get("role") in ("user", "assistant")]
     if not messages:
         raise HTTPException(status_code=400, detail="No valid messages found")
+
+    verbose("Incoming /chat request: assistant_id=%s messages=%d", assistant_id, len(messages))
 
     # Validate, sanitize, and detect injections
     messages, injection_detected = validate_and_sanitize(messages)
